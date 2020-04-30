@@ -14,6 +14,6 @@ jobs:
         fetch-depth: '1'
     - name: Update tags
       run: |
-           wget https://nightly.tlapl.us/products/TLAToolbox-1.7.1-macosx.cocoa.x86_64.zip
+           wget -q https://nightly.tlapl.us/products/TLAToolbox-1.7.1-macosx.cocoa.x86_64.zip
            xcrun altool --notarize-app --primary-bundle-id "org.lamport.tla.toolbox.product.product" --username "${{secrets.APPLE_CODESIGN_DEVELOPER_ID}}" --password "${{secrets.APPLE_CODESIGN_DEVELOPER_PASSWORD}}" --file "TLAToolbox-1.7.1-macosx.cocoa.x86_64.zip"
            
