@@ -32,13 +32,11 @@ jobs:
         APPLE_CODESIGN_DEVELOPER_PRIVKEY: ${{ secrets.APPLE_CODESIGN_DEVELOPER_PRIVKEY }}
     - name: OpenSSL
       run: |
-           openssl pkcs12 -export -inkey submission.pem -in certs.pem -out submission.p12 -passin pass:${{ secrets.APPLE_CERT_PASSWORD }} -passout pass:${{ secrets.APPLE_CERT_PASSWORD }}
            openssl pkcs12 -export -inkey dev.pem -in certs.pem -out dev.p12 -passin pass:${{ secrets.APPLE_CERT_PASSWORD }} -passout pass:${{ secrets.APPLE_CERT_PASSWORD }}
     - name: Keychain
       run: |
            security create-keychain -p ${{ secrets.APPLE_CERT_PASSWORD }} tla
            security import certs.pem -k tla -P ${{ secrets.APPLE_CERT_PASSWORD }} -T /usr/bin/codesign
-           security import submission.p12 -k tla -P ${{ secrets.APPLE_CERT_PASSWORD }} -T /usr/bin/codesign
            security import dev.p12 -k tla -P ${{ secrets.APPLE_CERT_PASSWORD }} -T /usr/bin/codesign
     - name: ListKeychain
       run: |
