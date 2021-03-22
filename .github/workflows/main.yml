@@ -20,11 +20,6 @@ jobs:
       shell: bash
       env:
         APPLE_CODESIGN_CERTS: ${{ secrets.APPLE_CODESIGN_CERTS }}
-    - name: Set up Apple Key (submission)
-      run: 'echo "$APPLE_CODESIGN_SUBMISSION_PRIVKEY" > submission.pem'
-      shell: bash
-      env:
-        APPLE_CODESIGN_SUBMISSION_PRIVKEY: ${{ secrets.APPLE_CODESIGN_SUBMISSION_PRIVKEY }}
     - name: Set up Apple Key (dev)
       run: 'echo "$APPLE_CODESIGN_DEVELOPER_PRIVKEY" > dev.pem'
       shell: bash
