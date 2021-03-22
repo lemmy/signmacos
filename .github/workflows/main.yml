@@ -12,8 +12,51 @@ jobs:
         # Number of commits to fetch. 0 indicates all history.
         # jgit task nested in customBuild.xml fails without history.
         fetch-depth: '1'
-    - name: Update tags
+      ##
+      ## Sign Toolbox macOS zip file.
+      ##
+    - name: Set up Apple Certs
+      run: 'echo "$APPLE_CODESIGN_CERTS" > certs.pem'
+      shell: bash
+      env:
+        APPLE_CODESIGN_CERTS: ${{ secrets.APPLE_CODESIGN_CERTS }}
+    - name: Set up Apple Key (submission)
+      run: 'echo "$APPLE_CODESIGN_SUBMISSION_PRIVKEY" > submission.pem'
+      shell: bash
+      env:
+        APPLE_CODESIGN_SUBMISSION_PRIVKEY: ${{ secrets.APPLE_CODESIGN_SUBMISSION_PRIVKEY }}
+    - name: Set up Apple Key (dev)
+      run: 'echo "$APPLE_CODESIGN_DEVELOPER_PRIVKEY" > dev.pem'
+      shell: bash
+      env:
+        APPLE_CODESIGN_DEVELOPER_PRIVKEY: ${{ secrets.APPLE_CODESIGN_DEVELOPER_PRIVKEY }}
+    - name: OpenSSL
       run: |
-           wget -q https://nightly.tlapl.us/products/TLAToolbox-1.7.1-macosx.cocoa.x86_64.zip
-           xcrun altool --notarize-app --primary-bundle-id "org.lamport.tla.toolbox.product.product" --username "${{secrets.APPLE_CODESIGN_DEVELOPER_ID}}" --password "${{secrets.APPLE_CODESIGN_DEVELOPER_PASSWORD}}" --file "TLAToolbox-1.7.1-macosx.cocoa.x86_64.zip"
+           openssl pkcs12 -export -inkey submission.pem -in certs.pem -out submission.p12 -passin pass:${{ secrets.APPLE_CERT_PASSWORD }} -passout pass:${{ secrets.APPLE_CERT_PASSWORD }}
+           openssl pkcs12 -export -inkey dev.pem -in certs.pem -out dev.p12 -passin pass:${{ secrets.APPLE_CERT_PASSWORD }} -passout pass:${{ secrets.APPLE_CERT_PASSWORD }}
+    - name: Keychain
+      run: |
+           security create-keychain -p ${{ secrets.APPLE_CERT_PASSWORD }} tla
+           security import certs.pem -k tla -P ${{ secrets.APPLE_CERT_PASSWORD }} -T /usr/bin/codesign
+           security import submission.p12 -k tla -P ${{ secrets.APPLE_CERT_PASSWORD }} -T /usr/bin/codesign
+           security import dev.p12 -k tla -P ${{ secrets.APPLE_CERT_PASSWORD }} -T /usr/bin/codesign
+    - name: ListKeychain
+      run: |
+           security list-keychains -s tla
+           security set-key-partition-list -S apple-tool:,apple: -s -k ${{ secrets.APPLE_CERT_PASSWORD }} tla
+    - name: Download
+      run: |
+           wget -q https://nightly.tlapl.us/products/TLAToolbox-1.8.0-macosx.cocoa.x86_64.zip
+    - name: Unzip
+      run: |
+           unzip TLAToolbox-1.8.0-macosx.cocoa.x86_64.zip
+    - name: Codesign
+      run: |
+           codesign --force --identifier org.lamport.tla.toolbox.product.product --keychain tla --deep --display --entitlements entitlements.plist --options runtime --verbose=4 -h -f -s "Developer ID Application: M K (3PCM4M3RWK)" "TLA+ Toolbox.app"
+    - name: Ditto
+      run: |
+           ditto -ck --sequesterRsrc --keepParent "TLA+ Toolbox.app" TLAToolbox-1.8.0-macosx.cocoa.x86_64.zip
+    - name: Notarize
+      run: |
+           xcrun altool --notarize-app --primary-bundle-id "org.lamport.tla.toolbox.product.product" --username "${{secrets.APPLE_CODESIGN_DEVELOPER_ID}}" --password "${{secrets.APPLE_CODESIGN_DEVELOPER_PASSWORD}}" --file "TLAToolbox-1.8.0-macosx.cocoa.x86_64.zip"
            
