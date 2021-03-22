@@ -57,4 +57,8 @@ jobs:
     - name: Notarize
       run: |
            xcrun altool --notarize-app --primary-bundle-id "org.lamport.tla.toolbox.product.product" --username "${{secrets.APPLE_CODESIGN_DEVELOPER_ID}}" --password "${{secrets.APPLE_CODESIGN_DEVELOPER_PASSWORD}}" --file "TLAToolbox-1.8.0-macosx.cocoa.x86_64.zip"
-
+    - name: Archive TLAToolbox
+      uses: actions/upload-artifact@v2
+      with:
+          name: TLAToolbox
+          path: TLAToolbox-1.8.0-macosx.cocoa.x86_64.zip
